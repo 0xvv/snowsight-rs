@@ -23,8 +23,8 @@ fn write_to_home(data: Vec<u8>, path: std::path::PathBuf) -> io::Result<()> {
     Ok(())
 }
 
-pub fn encrypt_pk(
-    pk: &str,
+pub fn encrypt(
+    content: &str,
     dist: &str,
     key: &[u8; 32],
     nonce: &[u8; 24],
@@ -32,13 +32,13 @@ pub fn encrypt_pk(
     let cipher = XChaCha20Poly1305::new(key.into());
 
     let encrypted_file = cipher
-        .encrypt(nonce.into(), pk.as_ref())
+        .encrypt(nonce.into(), content.as_ref())
         .map_err(|err| anyhow!("Encrypting small file: {}", err))?;
     write_to_home(encrypted_file, dist.into())?;
     Ok(())
 }
 
-pub fn decrypt_small_file(
+pub fn decrypt(
     encrypted_file_path: &str,
     key: &[u8; 32],
     nonce: &[u8; 24],

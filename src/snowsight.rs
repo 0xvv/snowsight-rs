@@ -1,6 +1,5 @@
 use std::{convert::TryFrom, env, str::FromStr};
 
-use bus::BusReader;
 use cast::{Cast, TxBuilder};
 use ethers::abi::AbiDecode;
 use ethers::core::types::{Address, Chain, U256};
@@ -9,7 +8,6 @@ use ethers::providers::{Http, Middleware, Provider};
 use ethers::signers::Signer;
 use ethers::types::transaction::eip2718::TypedTransaction;
 use serde_json::{Map, Value};
-use tracing::{debug, info};
 
 use crate::{LocalWallet, MSG};
 
@@ -27,20 +25,22 @@ pub async fn pay_fee(wallet: &LocalWallet, tier: &str) -> Result<(), ProviderErr
     let mut builder = TxBuilder::new(&provider, wallet.address(), to, Chain::Avalanche, false)
         .await
         .expect("could not build tx");
+
     builder
         .set_args("calculateMinPayment(uint256)()", args.clone())
         .await
         .expect("invalid args");
+
     let mut resp = cast
         .call(builder.build(), None)
         .await
         .expect("could not fetch price");
-    resp.pop();
+    resp.pop(); // Pop whitespace
     let value = U256::decode_hex(resp).expect("could not decode price");
 
     //Pay
     let sig = "pay(uint256)()";
-    let gas = U256::from(91000); // todo use cast estimate
+    let gas = U256::from(91000);
     let mut builder = TxBuilder::new(&provider, wallet.address(), to, Chain::Avalanche, false)
         .await
         .expect("could not build tx");
@@ -53,37 +53,36 @@ pub async fn pay_fee(wallet: &LocalWallet, tier: &str) -> Result<(), ProviderErr
         .set_nonce(nonce.await?);
 
     let (mut tx, _function) = builder.build();
-    tx.set_chain_id(43114);
-    info!("{:?}", provider.fill_transaction(&mut tx, None).await);
+    println!("{:?}", provider.fill_transaction(&mut tx, None).await);
     let signature = wallet.sign_transaction(&tx).await.expect("failed to sign");
 
-    debug!("{:?}", tx);
+    println!("{:?}", tx);
     let signed_tx = tx.rlp_signed(&signature);
     let raw_tx = format!("{:x}", signed_tx);
     let data = cast.publish(raw_tx).await.expect("failed to publish tx");
-    info!("Pay Tx hash: {:?}", *data);
+    println!("Pay Tx hash: {:?}", *data);
     let after = data.await?.unwrap();
-    info!("Pay Tx receipt: {:?}", after);
+    println!("Pay Tx receipt: {:?}", after);
     Ok(())
 }
 
-pub async fn run_propagator(wallet: &LocalWallet, mut rx: BusReader<TypedTransaction>) -> Result<(), reqwest::Error> {
+//UNTESTED AS OF YET
+pub async fn propagate(wallet: &LocalWallet, tx: TypedTransaction) -> Result<(), reqwest::Error> {
     let signed_key = wallet.sign_message(MSG).await.unwrap();
-    for tx in rx.iter() {
-        let signature = wallet.sign_transaction(&tx).await.expect("failed to sign");
-        let signed_tx = tx.rlp_signed(&signature);
-        let raw_tx = format!("{:x}", signed_tx);
-        let mut args = Map::new();
-        args.insert("signed_key".into(), Value::String(signed_key.to_string()));
-        args.insert("include_finalized".into(), Value::String(raw_tx));
-        let msg = Value::Object(args);
-        info!("{}", serde_json::to_string(&msg).unwrap());
-        let client = reqwest::Client::new();
-        let res = client
-            .post("http://tx-propagator.snowsight.chainsight.dev:8081")
-            .body(serde_json::to_string(&msg).unwrap())
-            .send()
-            .await?;
-    }
+    let signature = wallet.sign_transaction(&tx).await.expect("failed to sign");
+    let signed_tx = tx.rlp_signed(&signature);
+    let raw_tx = format!("{:x}", signed_tx);
+    let mut args = Map::new();
+    args.insert("signed_key".into(), Value::String(signed_key.to_string()));
+    args.insert("include_finalized".into(), Value::String(raw_tx));
+    let msg = Value::Object(args);
+    println!("{}", serde_json::to_string(&msg).unwrap());
+    let client = reqwest::Client::new();
+    let res = client
+        .post("http://tx-propagator.snowsight.chainsight.dev:8081")
+        .body(serde_json::to_string(&msg).unwrap())
+        .send()
+        .await?;
+    println!("{}", res.text().await?);
     Ok(())
 }
