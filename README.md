@@ -28,7 +28,7 @@ snowsight-rs <private-key>
 ```
 Your private key will be encrypted and stored in the home directory for later use.
 
-Then run the example
+Then run the code to see the transactions stream.
 ```shell
 snowsight-rs 
 ```
