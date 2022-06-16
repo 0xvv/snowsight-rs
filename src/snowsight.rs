@@ -74,7 +74,7 @@ pub async fn propagate(wallet: &LocalWallet, tx: TypedTransaction) -> Result<(),
     let raw_tx = format!("{:x}", signed_tx);
     let mut args = Map::new();
     args.insert("signed_key".into(), Value::String(signed_key.to_string()));
-    args.insert("include_finalized".into(), Value::String(raw_tx));
+    args.insert("raw_tx".into(), Value::String(raw_tx));
     let msg = Value::Object(args);
     println!("{}", serde_json::to_string(&msg).unwrap());
     let client = reqwest::Client::new();
