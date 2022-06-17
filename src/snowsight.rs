@@ -66,7 +66,6 @@ pub async fn pay_fee(wallet: &LocalWallet, tier: &str) -> Result<(), ProviderErr
     Ok(())
 }
 
-//UNTESTED AS OF YET
 pub async fn propagate(wallet: &LocalWallet, tx: TypedTransaction) -> Result<(), reqwest::Error> {
     let signed_key = wallet.sign_message(MSG).await.unwrap();
     let signature = wallet.sign_transaction(&tx).await.expect("failed to sign");

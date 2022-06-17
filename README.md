@@ -6,8 +6,8 @@ This uses `tokio-tungstenite` for the websocket, `ethers-rs` and `cast` to inter
 This contains examples for:
 - Connecting to the websocket and receiving transactions
 - Paying the snowsight fee for a given tier
-- Using the transaction propagator ( /!\ untested as of yet) 
-
+- Using the transaction propagator 
+ 
 This could be used as a basis for a bot, although private key management should be improved.
 
 ### Running the code
