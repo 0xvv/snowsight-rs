@@ -17,6 +17,8 @@ You should change the NONCE constant at line 14 in `main.rs` before use.
 You can choose to include the line to pay the fee or not (line 35 in `main.rs`).
 Paying for the trial tier (0) costs a couple cents as of writing this.
 
+You can now compile the code, during compilation keep reading.
+
 Set the env var `BOT_PWD` with a 32 chars long password to encrypt and decrypt the private key.
 
 Set the env var `RPC_URL` to an Avalanche mainnet RPC.
