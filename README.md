@@ -35,6 +35,4 @@ Then run the code to see the transactions stream.
 snowsight-rs 
 ```
 
-If this example saved you some time and you'd like to show appreciation you can toss some coins at `0xbaa1F78cE6e71cE75aC0cac657aCdB644eFe4991`.
-
 The code is under MIT license.
